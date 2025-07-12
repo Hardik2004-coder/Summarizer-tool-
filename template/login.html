@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Authentication</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .auth-container {
+        background-color: #ffffff;
+        padding: 2.5rem; /* 40px */
+        border-radius: 1.25rem; /* 20px */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+      .form-input {
+        width: 100%;
+        padding: 0.75rem; /* 12px */
+        margin-bottom: 1rem; /* 16px */
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem; /* 8px */
+        outline: none;
+        transition: border-color 0.3s ease-in-out;
+      }
+      .form-input:focus {
+        border-color: #6366f1; /* Indigo-500 */
+      }
+      .auth-button {
+        width: 100%;
+        padding: 0.75rem; /* 12px */
+        border-radius: 0.5rem; /* 8px */
+        background-color: #6366f1; /* Indigo-500 */
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out,
+          transform 0.2s ease-in-out;
+      }
+      .auth-button:hover {
+        background-color: #4f46e5; /* Indigo-600 */
+        transform: translateY(-2px);
+      }
+      .toggle-link {
+        color: #6366f1; /* Indigo-500 */
+        cursor: pointer;
+        font-weight: 500;
+        margin-top: 1rem;
+        display: block;
+      }
+      .message {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        text-align: left;
+      }
+      .message.success {
+        background-color: #ecfdf5; /* Green-50 */
+        color: #059669; /* Green-600 */
+        border: 1px solid #10b981; /* Green-500 */
+      }
+      .message.error {
+        background-color: #fef2f2; /* Red-50 */
+        color: #ef4444; /* Red-600 */
+        border: 1px solid #ef4444; /* Red-500 */
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-container">
+      <h2 id="auth-title" class="text-3xl font-bold text-gray-800 mb-6">
+        Login
+      </h2>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-4">
+        <input
+          type="email"
+          id="login-email"
+          class="form-input"
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          id="login-password"
+          class="form-input"
+          placeholder="Password"
+          required
+        />
+        <button type="submit" class="auth-button">Login</button>
+        <p class="toggle-link" id="show-signup">
+          Don't have an account? Sign up
+        </p>
+        <div id="login-message" class="message hidden"></div>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="signup-form" class="space-y-4 hidden">
+        <input
+          type="text"
+          id="signup-name"
+          class="form-input"
+          placeholder="Name"
+          required
+        />
+        <input
+          type="email"
+          id="signup-email"
+          class="form-input"
+          placeholder="Email"
+          required
+        />
+        <input
+          type="password"
+          id="signup-password"
+          class="form-input"
+          placeholder="Password"
+          required
+        />
+        <input
+          type="password"
+          id="confirm-password"
+          class="form-input"
+          placeholder="Confirm Password"
+          required
+        />
+        <button type="submit" class="auth-button">Sign Up</button>
+        <p class="toggle-link" id="show-login">
+          Already have an account? Login
+        </p>
+        <div id="signup-message" class="message hidden"></div>
+      </form>
+    </div>
+
+    <script>
+      // Get DOM elements
+      const authTitle = document.getElementById("auth-title");
+      const loginForm = document.getElementById("login-form");
+      const signupForm = document.getElementById("signup-form");
+      const showSignupLink = document.getElementById("show-signup");
+      const showLoginLink = document.getElementById("show-login");
+      const loginMessage = document.getElementById("login-message");
+      const signupMessage = document.getElementById("signup-message");
+
+      // Function to display messages
+      function showMessage(element, message, type) {
+        element.classList.remove("hidden", "success", "error");
+        element.textContent = message;
+        element.classList.add(type);
+      }
+
+      // Function to hide messages
+      function hideMessage(element) {
+        element.classList.add("hidden");
+        element.textContent = "";
+      }
+
+      // Toggle between login and signup forms
+      showSignupLink.addEventListener("click", () => {
+        loginForm.classList.add("hidden");
+        signupForm.classList.remove("hidden");
+        authTitle.textContent = "Sign Up";
+        hideMessage(loginMessage);
+        hideMessage(signupMessage);
+      });
+
+      showLoginLink.addEventListener("click", () => {
+        signupForm.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+        authTitle.textContent = "Login";
+        hideMessage(loginMessage);
+        hideMessage(signupMessage);
+      });
+
+      // Handle Login Form Submission
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideMessage(loginMessage);
+
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+
+        try {
+          const response = await fetch("http://localhost:5005/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showMessage(loginMessage, data.message, "success");
+            // You might want to redirect the user or store a token here
+            localStorage.setItem("user_id", data?.data);
+            window.location.href = "http://127.0.0.1:5005";
+          } else {
+            showMessage(
+              loginMessage,
+              data.error || "Login failed. Please try again.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error during login:", error);
+          showMessage(
+            loginMessage,
+            "An unexpected error occurred. Please try again later.",
+            "error"
+          );
+        }
+      });
+
+      // Handle Signup Form Submission
+      signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideMessage(signupMessage);
+
+        const name = document.getElementById("signup-name").value;
+        const email = document.getElementById("signup-email").value;
+        const password = document.getElementById("signup-password").value;
+        const confirmPassword =
+          document.getElementById("confirm-password").value;
+
+        if (password !== confirmPassword) {
+          showMessage(signupMessage, "Passwords do not match.", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch("http://localhost:5005/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, email, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showMessage(signupMessage, data.message, "success");
+            // Optionally switch to login form after successful signup
+            setTimeout(() => {
+              showLoginLink.click();
+              hideMessage(signupMessage); // Hide message after switching
+            }, 2000);
+          } else {
+            showMessage(
+              signupMessage,
+              data.error || "Signup failed. Please try again.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error during signup:", error);
+          showMessage(
+            signupMessage,
+            "An unexpected error occurred. Please try again later.",
+            "error"
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
